@@ -41,39 +41,48 @@ common lang
 library
     import: lang
     exposed-modules:
-      MyModule
-      Plutus.Contracts.Game
+      Contracts.Test
     build-depends:
       base >= 4.9 && < 5,
       aeson,
       bytestring,
       containers,
       freer-extras,
+      text,
       playground-common,
+      plutus-chain-index,
       plutus-contract,
       plutus-tx-plugin,
       plutus-tx,
-      plutus-ledger
-    hs-source-dirs: src examples/src
+      plutus-ledger,
+      plutus-use-cases
+    hs-source-dirs: src
 
 test-suite plutus-example-projects-test
   import: lang
   type: exitcode-stdio-1.0
   main-is: Spec.hs
-  hs-source-dirs: examples/test
+  hs-source-dirs: src/test
   other-modules:
-    Spec.Game
+    Spec.Test
   build-depends:
     plutus-tx -any,
     plutus-tx-plugin,
     plutus-contract -any,
     plutus-ledger -any,
-    plutus-starter -any
+    plutus-starter -any,
+    plutus-use-cases -any
   build-depends:
     base >=4.9 && <5,
+    bytestring,
+    data-default,
+    freer-extras,
+    freer-simple -any,
+    lens -any,
     tasty -any,
     tasty-hunit -any,
-    tasty-hedgehog >=0.2.0.0
+    tasty-hedgehog >=0.2.0.0,
+    text -any
 
 executable plutus-starter-pab
   import: lang
