@@ -53,36 +53,35 @@ data ContractParam = ContractParam
 
 PlutusTx.makeLift ''ContractParam
 
-data MessageData = MessageData
-    { mdMessageId:: Integer }
-    deriving (Show, Generic, FromJSON, ToJSON, Haskell.Eq)
+-- data MessageData = MessageData
+--     { mdMessageId:: Integer }
+--     deriving (Show, Generic, FromJSON, ToJSON, Haskell.Eq)
 
-PlutusTx.unstableMakeIsData ''MessageData
-PlutusTx.makeLift ''MessageData
+-- PlutusTx.unstableMakeIsData ''MessageData
+-- PlutusTx.makeLift ''MessageData
 
--- data ContractDatum = 
---         Request MessageData
---         | Signed (SignedMessage MessageData)
---         deriving (Show, Generic, FromJSON, ToJSON, Haskell.Eq)
-type ContractDatum = SignedMessage MessageData
--- PlutusTx.unstableMakeIsData ''ContractDatum
--- PlutusTx.makeLift ''ContractDatum
-
-data ContractRedeemer = ContractRedeemer
-    { crMessage :: Maybe (SignedMessage Integer) }
-    deriving Show
-PlutusTx.unstableMakeIsData ''ContractRedeemer
+data ContractDatum = ContractDatum
+        { cdMessageId:: Integer }
+        deriving (Show, Generic, FromJSON, ToJSON, Haskell.Eq)
+-- type ContractDatum = SignedMessage MessageData
+PlutusTx.unstableMakeIsData ''ContractDatum
+PlutusTx.makeLift ''ContractDatum
+type ContractRedeemer = SignedMessage ContractDatum
+-- data ContractRedeemer = ContractRedeemer
+--     { crMessage :: Maybe (SignedMessage Integer) }
+--     deriving Show
+-- PlutusTx.unstableMakeIsData ''ContractRedeemer
 
 {-# INLINABLE mkValidator #-}
 mkValidator :: ContractParam -> ContractDatum -> ContractRedeemer -> ScriptContext -> Bool
 mkValidator contractParam datum r ctx = 
-    --traceIfFalse "value signed" (isValueSigned $ cdSignedMessageId datum)
+    traceIfFalse "value signed" (isValueSigned $ r)
     -- case datum of
     --     Signed signedMessage -> traceIfFalse "value signed" (isValueSigned signedMessage)
     --     Request message -> traceIfFalse "request not signed" False
-    traceIfFalse "value signed" (isValueSigned datum)
+    --traceIfFalse "value signed" (isValueSigned datum)
   where 
-    verifyValueSigned :: SignedMessage MessageData -> PubKey -> Maybe MessageData
+    verifyValueSigned :: SignedMessage ContractDatum -> PubKey -> Maybe ContractDatum
     verifyValueSigned sm pk = case verifySignedMessageOnChain ctx pk sm of
             Left err -> case err of
                 SignatureMismatch sig pk hash -> traceError "SignatureMismatch"
@@ -126,7 +125,7 @@ initTest contractParam privateKey uniqueTokenAsset = do
         messageId = 123
         uniqueTokenVal = assetClassValue uniqueTokenAsset 1
     --let contractDatum = Signed $ signMessage MessageData{ mdMessageId = messageId } privateKey
-    let contractDatum = signMessage MessageData{ mdMessageId = messageId } privateKey
+    let contractDatum = ContractDatum{ cdMessageId = messageId }
     let lookups = Constraints.typedValidatorLookups inst 
                 <> Constraints.otherScript mrScript
 
@@ -143,7 +142,7 @@ runTest contractParam privateKey uniqueTokenAsset = do
         addr = address contractParam
         messageId = 123
         uniqueTokenVal = assetClassValue uniqueTokenAsset 1
-        redeemer = Redeemer $ PlutusTx.toBuiltinData $ ContractRedeemer{ crMessage = Just $ signMessage messageId privateKey }
+        redeemer = Redeemer $ PlutusTx.toBuiltinData $ signMessage ContractDatum{ cdMessageId = messageId } privateKey
 
     pkh <- pubKeyHash <$> Contract.ownPubKey
     utxos <- utxoAt addr

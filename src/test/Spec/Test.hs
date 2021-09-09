@@ -99,9 +99,6 @@ tests =
     testGroup "test"
         [ checkPredicateOptions options "test"
             (assertNoFailedTransactions
-            .&&. walletFundsChange w1 (
-                Ada.toValue . Ada.lovelaceOf $ 1000
-                )
             )
             testTrace
         ]
