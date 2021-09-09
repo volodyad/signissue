@@ -82,13 +82,15 @@ mkValidator contractParam datum r ctx =
     --traceIfFalse "value signed" (isValueSigned datum)
   where 
     verifyValueSigned :: SignedMessage ContractDatum -> PubKey -> Maybe ContractDatum
-    verifyValueSigned sm pk = case verifySignedMessageOnChain ctx pk sm of
-            Left err -> case err of
-                SignatureMismatch sig pk hash -> traceError "SignatureMismatch"
-                DatumMissing hash ->  traceError "DatumMissing"
-                DecodingError -> traceError "DecodingError"
-                DatumNotEqualToExpected -> traceError "DatumNotEqualToExpected"
-            Right res -> Just res
+    verifyValueSigned sm pk = case verifySignedMessageConstraints pk sm of
+
+            Left err -> Nothing
+            -- Left err -> case err of
+            --     SignatureMismatch sig pk hash -> traceError "SignatureMismatch"
+            --     DatumMissing hash ->  traceError "DatumMissing"
+            --     DecodingError -> traceError "DecodingError"
+            --     DatumNotEqualToExpected -> traceError "DatumNotEqualToExpected"
+            Right (res, _) -> Just res
 
     isValueSigned message = isJust $ verifyValueSigned message (cpSigner contractParam)
 
